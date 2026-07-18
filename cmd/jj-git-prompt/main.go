@@ -13,7 +13,7 @@ import (
 	"github.com/rselbach/jj-git-prompt/internal/prompt"
 )
 
-const version = "0.1.0"
+var version = "0.1.0"
 
 func main() {
 	if err := run(); err != nil {

@@ -19,6 +19,18 @@ Install the latest version with Go:
 go install github.com/rselbach/jj-git-prompt/cmd/jj-git-prompt@latest
 ```
 
+Prebuilt binaries are also available from the latest GitHub release:
+
+| Platform | Binary |
+| --- | --- |
+| Linux x64 (`amd64`) | [`jj-git-prompt-linux-amd64`](https://github.com/rselbach/jj-git-prompt/releases/latest/download/jj-git-prompt-linux-amd64) |
+| Linux ARM64 | [`jj-git-prompt-linux-arm64`](https://github.com/rselbach/jj-git-prompt/releases/latest/download/jj-git-prompt-linux-arm64) |
+| macOS x64 (`amd64`) | [`jj-git-prompt-darwin-amd64`](https://github.com/rselbach/jj-git-prompt/releases/latest/download/jj-git-prompt-darwin-amd64) |
+| macOS ARM64 | [`jj-git-prompt-darwin-arm64`](https://github.com/rselbach/jj-git-prompt/releases/latest/download/jj-git-prompt-darwin-arm64) |
+
+After downloading a binary, mark it executable with `chmod +x` and move it to
+a directory in `PATH`.
+
 Or build the repository from source:
 
 ```sh
