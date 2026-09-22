@@ -127,7 +127,7 @@ func (e treeEntry) isTree() bool { return e.mode == treeModeDir }
 // readTree parses a raw git tree object into its entries by name.
 func (b *gitBackend) readTree(id string) (map[string]treeEntry, error) {
 	hash := plumbing.NewHash(CommitID(id).Hex())
-	obj, err := b.repo.Storer.EncodedObject(plumbing.TreeObject, hash)
+	obj, err := b.objects.EncodedObject(plumbing.TreeObject, hash)
 	if err != nil {
 		return nil, err
 	}

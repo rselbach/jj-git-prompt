@@ -11,8 +11,10 @@ import (
 	"strings"
 	"sync"
 
-	gogit "github.com/go-git/go-git/v5"
+	"github.com/go-git/go-billy/v5/osfs"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/cache"
+	"github.com/go-git/go-git/v5/storage/filesystem"
 	"google.golang.org/protobuf/proto"
 
 	gspb "github.com/rselbach/jj-git-prompt/internal/jj/pb/git_storepb"
@@ -40,7 +42,7 @@ func (c *Commit) HasConflict() bool { return len(c.RootTree) > 1 }
 
 // gitBackend reads jj commits stored as git commits plus extra metadata.
 type gitBackend struct {
-	repo     *gogit.Repository
+	objects  *filesystem.ObjectStorage
 	storeDir string
 
 	extrasOnce sync.Once
@@ -60,11 +62,21 @@ func openGitBackend(repoPath string) (*gitBackend, error) {
 	if !filepath.IsAbs(gitDir) {
 		gitDir = filepath.Join(storeDir, gitDir)
 	}
-	repo, err := gogit.PlainOpen(gitDir)
-	if err != nil {
-		return nil, fmt.Errorf("open git repo %s: %w", gitDir, err)
+	if _, err := os.Stat(filepath.Join(gitDir, "objects")); err != nil {
+		return nil, fmt.Errorf("open git objects %s: %w", gitDir, err)
 	}
-	return &gitBackend{repo: repo, storeDir: storeDir}, nil
+	// JJ supplies commit IDs from its own view and index, so we only need
+	// objects. Opening a full go-git repository also validates ref storage,
+	// rejecting reftable even though it does not change the object format.
+	storage := filesystem.NewStorage(osfs.New(gitDir), cache.NewObjectLRUDefault())
+	cfg, err := storage.Config()
+	if err != nil {
+		return nil, fmt.Errorf("read git config %s: %w", gitDir, err)
+	}
+	if format := cfg.Extensions.ObjectFormat; format != "" && format != "sha1" {
+		return nil, fmt.Errorf("unsupported git object format %q", format)
+	}
+	return &gitBackend{objects: &storage.ObjectStorage, storeDir: storeDir}, nil
 }
 
 // extrasTables lazily loads the extra-metadata stacked tables. Old commits
@@ -123,7 +135,7 @@ func rootCommit(id CommitID) *Commit {
 
 func (b *gitBackend) rawCommit(id CommitID) ([]byte, error) {
 	hash := plumbing.NewHash(id.Hex())
-	obj, err := b.repo.Storer.EncodedObject(plumbing.CommitObject, hash)
+	obj, err := b.objects.EncodedObject(plumbing.CommitObject, hash)
 	if err != nil {
 		return nil, fmt.Errorf("read git commit %s: %w", id.Hex(), err)
 	}
